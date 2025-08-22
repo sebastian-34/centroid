@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Points Centroid</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        
+        h1 {
+            margin-top: 40px;
+            margin-bottom: 24px;
+            font-weight: 600;
+            color: #1a237e;
+            letter-spacing: 0.5px;
+        
+        .graph-card {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 32px rgba(30,40,90,0.10);
+            padding: 32px 28px 28px 28px;
+            max-width: 98vw;
+            width: 100%;
+            max-width: 700px;
+            margin-bottom: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .graph-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .responsive-canvas {
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            aspect-ratio: 1 / 1;
+            background: #f8fafc;
+            border: 1.5px solid #e0e3ea;
+            box-shadow: 0 2px 12px rgba(30,40,90,0.04);
+            border-radius: 10px;
+            margin-bottom: 28px;
+            display: block;
+        }
+        .reset-btn {
+            padding: 16px 40px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            background: #1976d2;
+            color: #fff;
+            border: none;
+            box-shadow: 0 2px 8px rgba(30,40,90,0.08);
+            cursor: pointer;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .reset-btn:hover {
+            background: #1565c0;
+            transform: scale(1.04);
+        }
+        @media (max-width: 700px) {
+            .graph-card {
+                padding: 16px 2vw 18px 2vw;
+            }
+            .responsive-canvas {
+                max-width: 98vw;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Random Points and Centroid</h1>
+    <div class="graph-card">
+        <div class="graph-container">
+            <canvas id="graph" class="responsive-canvas" width="600" height="600"></canvas>
+            <button class="reset-btn" onclick="generateAndDraw()">Reset Points</button>
+        </div>
+    </div>
+    <script>
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        function generateRandomPoints() {
+            const numPoints = getRandomInt(4, 10);
+            const points = [];
+            for (let i = 0; i < numPoints; i++) {
+                points.push({
+                    x: getRandomInt(-10, 10),
+                    y: getRandomInt(-10, 10)
+                });
+            }
+            return points;
+        }
+        function calculateCentroid(points) {
+            const sum = points.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), { x: 0, y: 0 });
+            return { x: sum.x / points.length, y: sum.y / points.length };
+        }
+        function drawGraph(points, centroid) {
+            const canvas = document.getElementById('graph');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Set up graph dimensions
+            const padding = 40;
+            const graphSize = 620;
+            const scale = (graphSize - 2 * padding) / 20; // -10 to 10
+            const centerX = padding + (graphSize - 2 * padding) / 2;
+            const centerY = padding + (graphSize - 2 * padding) / 2;
+
+
+            // Draw grid
+            ctx.save();
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+            for (let t = -10; t <= 10; t++) {
+                let x = centerX + t * scale;
+                let y = centerY - t * scale;
+                // Vertical grid lines
+                ctx.beginPath();
+                ctx.moveTo(x, padding);
+                ctx.lineTo(x, graphSize - padding);
+                ctx.stroke();
+                // Horizontal grid lines
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(graphSize - padding, y);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // Draw axes
+            ctx.strokeStyle = '#aaa';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            // X axis
+            ctx.moveTo(padding, centerY);
+            ctx.lineTo(graphSize - padding, centerY);
+            // Y axis
+            ctx.moveTo(centerX, padding);
+            ctx.lineTo(centerX, graphSize - padding);
+            ctx.stroke();
+
+            // Axis labels
+            ctx.fillStyle = '#333';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('X', graphSize - padding + 20, centerY + 5);
+            ctx.fillText('Y', centerX - 10, padding - 15);
+            ctx.textAlign = 'center';
+            // Place the 10's directly on the axis lines
+            ctx.fillText('-10', padding, centerY + 18);
+            ctx.fillText('10', graphSize - padding, centerY + 18);
+            ctx.fillText('10', centerX + 32, padding);
+            ctx.fillText('-10', centerX + 32, graphSize - padding);
+
+            // Draw ticks on axes
+            ctx.strokeStyle = '#888';
+            ctx.lineWidth = 1;
+            for (let t = -9; t <= 9; t++) {
+                if (t === 0) continue; // skip origin
+                // X axis ticks
+                let x = centerX + t * scale;
+                ctx.beginPath();
+                ctx.moveTo(x, centerY - 7);
+                ctx.lineTo(x, centerY + 7);
+                ctx.stroke();
+                // X axis tick labels
+                ctx.fillStyle = '#555';
+                ctx.font = '13px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(t, x, centerY + 24);
+
+                // Y axis ticks
+                let y = centerY - t * scale;
+                ctx.beginPath();
+                ctx.moveTo(centerX - 7, y);
+                ctx.lineTo(centerX + 7, y);
+                ctx.stroke();
+                // Y axis tick labels
+                ctx.fillStyle = '#555';
+                ctx.font = '13px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(t, centerX + 12, y + 5);
+            }
+
+            // Draw points with labels
+            ctx.fillStyle = 'blue';
+            ctx.font = '13px Arial';
+            points.forEach((p, i) => {
+                const px = centerX + p.x * scale;
+                const py = centerY - p.y * scale;
+                ctx.beginPath();
+                ctx.arc(px, py, 6, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#222';
+                ctx.fillText(`P${i+1} (${p.x.toFixed(1)},${p.y.toFixed(1)})`, px, py - 12);
+                ctx.fillStyle = 'blue';
+            });
+
+            // Draw centroid with label
+            ctx.fillStyle = 'red';
+            const cx = centerX + centroid.x * scale;
+            const cy = centerY - centroid.y * scale;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 8, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.fillStyle = '#b00';
+            ctx.font = 'bold 14px Arial';
+            ctx.fillText(`Centroid (${centroid.x.toFixed(2)},${centroid.y.toFixed(2)})`, cx, cy - 14);
+    }
+        function generateAndDraw() {
+            const points = generateRandomPoints();
+            const centroid = calculateCentroid(points);
+            drawGraph(points, centroid);
+        }
+        document.addEventListener('DOMContentLoaded', generateAndDraw);
+    </script>
+</body>
+</html>
